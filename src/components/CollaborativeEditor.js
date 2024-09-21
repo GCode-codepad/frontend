@@ -1,13 +1,14 @@
+// CollaborativeEditor.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { useParams } from 'react-router-dom';
-import MonacoEditor from 'react-monaco-editor';
-import * as monaco from 'monaco-editor';
-import Peer from "simple-peer";
+import Peer from 'simple-peer';
+import CodeEditor from './CodeEditor'; // Adjust the path as necessary
 
 const CollaborativeEditor = () => {
   const { roomId } = useParams();
   const [code, setCode] = useState('// Start coding...');
+  const [language, setLanguage] = useState('javascript'); // Initialize language state
   const [me, setMe] = useState('');
   const [stream, setStream] = useState(null);
   const [receivingCall, setReceivingCall] = useState(false);
@@ -17,13 +18,13 @@ const CollaborativeEditor = () => {
   const [callEnded, setCallEnded] = useState(false);
   const [name, setName] = useState('Your Name');
   const [usersInRoom, setUsersInRoom] = useState([]);
-  const [language, setLanguage] = useState('javascript');
 
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
   const socketRef = useRef();
-  const editorRef = useRef();
+  const typingRef = useRef(false); // To manage typing status
+  const typingTimeoutRef = useRef(null); // To debounce typing events
 
   useEffect(() => {
     // Initialize socket connection
@@ -43,22 +44,20 @@ const CollaborativeEditor = () => {
     socketRef.current.emit('joinRoom', roomId);
 
     // Get user media
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         setStream(stream);
         if (myVideo.current) {
           myVideo.current.srcObject = stream;
         }
+        console.log('Obtained user media stream');
       })
       .catch((err) => {
         console.error('Failed to get media stream:', err);
       });
 
-    socketRef.current.on('codeChange', (newCode) => {
-      console.log('Received codeChange:', newCode);
-      setCode(newCode);
-    });
-
+    // Handle incoming calls
     socketRef.current.on('callUser', (data) => {
       console.log('Receiving call from', data.from);
       setReceivingCall(true);
@@ -67,6 +66,7 @@ const CollaborativeEditor = () => {
       setCallerSignal(data.signal);
     });
 
+    // Listen for userJoined event to get list of users
     socketRef.current.on('userJoined', (userId) => {
       console.log('User joined:', userId);
       setUsersInRoom((prevUsers) => [...prevUsers, userId]);
@@ -76,65 +76,32 @@ const CollaborativeEditor = () => {
     socketRef.current.emit('getUsersInRoom', roomId);
 
     socketRef.current.on('usersInRoom', (users) => {
-      console.log('Users in room:', users);
       setUsersInRoom(users.filter((id) => id !== socketRef.current.id));
     });
 
+    // Listen for code changes from server
+    socketRef.current.on('codeChange', ({ code: newCode }) => {
+      console.log('Received code change from server');
+      setCode(newCode);
+    });
+
+    // Listen for initial code from server
+    socketRef.current.on('codeChange', ({ code: initialCode }) => {
+      console.log('Received initial code from server');
+      setCode(initialCode);
+    });
+
+    // Cleanup on unmount
     return () => {
-      // Clean up on unmount
       if (connectionRef.current) {
         connectionRef.current.destroy();
       }
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
+      console.log('Cleaned up socket connections and peer connections');
     };
-  }, []); // Empty dependency array ensures this runs only once
-
-  const configureMonaco = (monacoInstance) => {
-    if (language === 'python') {
-      monacoInstance.languages.register({ id: 'python' });
-      monacoInstance.languages.setMonarchTokensProvider('python', {
-        // Basic tokenizer rules for Python
-        // Enhanced tokenizer rules for Python with keywords
-        tokenizer: {
-          root: [
-            [/\b(def|class|if|elif|else|for|while|return|import|from|as|print|in|try|except|finally|with|lambda|pass|break|continue|and|or|not|is|None|True|False|main)\b/, 'keyword'],
-            [/[a-zA-Z_][\w]*/, 'identifier'],
-            [/\d+/, 'number'],
-            [/[+\-*/%=<>!]+/, 'operator'],
-            [/[{}()\[\]]/, '@brackets'],
-            [/[;,.]/, 'delimiter'],
-            [/"([^"\\]|\\.)*$/, 'string.invalid'],
-            [/'([^'\\]|\\.)*$/, 'string.invalid'],
-            [/"([^"\\]|\\.)*"/, 'string'],
-            [/'([^'\\]|\\.)*'/, 'string'],
-          ],
-        },
-      });
-    }
-    // Add configurations for other languages if needed
-  };
-
-  const editorDidMount = (editor, monacoInstance) => {
-    editorRef.current = editor;
-    configureMonaco(monacoInstance);
-  };
-
-  // Reconfigure Monaco when the language changes
-  useEffect(() => {
-    if (editorRef.current) {
-      const model = editorRef.current.getModel();
-      monaco.editor.setModelLanguage(model, language);
-      configureMonaco(monaco);
-    }
-  }, [language]);
-
-  const onCodeChange = (newCode) => {
-    setCode(newCode);
-    console.log('Emitting codeChange:', newCode);
-    socketRef.current.emit('codeChange', { roomId, code: newCode });
-  };
+  }, [roomId]);
 
   const callUser = (id) => {
     console.log('Calling user:', id);
@@ -143,9 +110,7 @@ const CollaborativeEditor = () => {
       trickle: false,
       stream: stream,
       config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-        ],
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       },
     });
 
@@ -156,12 +121,14 @@ const CollaborativeEditor = () => {
         from: me,
         name: name,
       });
+      console.log(`Emitting callUser to ${id}`);
     });
 
     peer.on('stream', (stream) => {
       if (userVideo.current) {
         userVideo.current.srcObject = stream;
       }
+      console.log('Received stream from peer');
     });
 
     peer.on('error', (err) => {
@@ -185,20 +152,20 @@ const CollaborativeEditor = () => {
       trickle: false,
       stream: stream,
       config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-        ],
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       },
     });
 
     peer.on('signal', (data) => {
       socketRef.current.emit('answerCall', { signal: data, to: caller });
+      console.log(`Emitting answerCall to ${caller}`);
     });
 
     peer.on('stream', (stream) => {
       if (userVideo.current) {
         userVideo.current.srcObject = stream;
       }
+      console.log('Received stream from peer');
     });
 
     peer.on('error', (err) => {
@@ -210,44 +177,28 @@ const CollaborativeEditor = () => {
   };
 
   const leaveCall = () => {
+    console.log('Leaving call');
     setCallEnded(true);
     if (connectionRef.current) {
       connectionRef.current.destroy();
+      console.log('Destroyed peer connection');
     }
     if (socketRef.current) {
       socketRef.current.disconnect();
+      console.log('Disconnected socket');
     }
   };
 
+  // Handle code changes
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+    socketRef.current.emit('codeChange', { roomId, code: newCode });
+  };
+
   return (
-    <div style={{display: 'flex'}}>
-      <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-      >
-        <option value="javascript">JavaScript</option>
-        <option value="typescript">TypeScript</option>
-        <option value="java">Java</option>
-        <option value="cpp">C++</option>
-        <option value="python">Python</option>
-      </select>
-
-      <MonacoEditor
-        width="100%"
-        height="80vh"
-        language={language}
-        theme="vs-dark"
-        value={code}
-        onChange={onCodeChange}
-        editorDidMount={editorDidMount}
-        options={{
-          selectOnLineNumbers: true,
-          automaticLayout: true,
-        }}
-      />
-
+    <div style={{ display: 'flex', flexDirection: 'row' }}>
       {/* Video Call and Controls */}
-      <div style={{width: '50%', padding: '20px'}}>
+      <div style={{ width: '50%', padding: '20px' }}>
         {/* Video Streams */}
         <div>
           {stream && (
@@ -256,7 +207,7 @@ const CollaborativeEditor = () => {
               muted
               ref={myVideo}
               autoPlay
-              style={{width: '300px'}}
+              style={{ width: '300px', marginRight: '10px' }}
             />
           )}
           {callAccepted && !callEnded && (
@@ -264,7 +215,7 @@ const CollaborativeEditor = () => {
               playsInline
               ref={userVideo}
               autoPlay
-              style={{width: '300px'}}
+              style={{ width: '300px' }}
             />
           )}
         </div>
@@ -283,15 +234,32 @@ const CollaborativeEditor = () => {
         <div>
           <h2>Participants</h2>
           {usersInRoom.map((userId) => (
-            <div key={userId}>
+            <div key={userId} style={{ marginBottom: '5px' }}>
               <span>{userId}</span>
-              <button onClick={() => callUser(userId)}>Call</button>
+              <button
+                onClick={() => callUser(userId)}
+                style={{ marginLeft: '10px' }}
+              >
+                Call
+              </button>
             </div>
           ))}
           {callAccepted && !callEnded && (
-            <button onClick={leaveCall}>End Call</button>
+            <button onClick={leaveCall} style={{ marginTop: '10px' }}>
+              End Call
+            </button>
           )}
         </div>
+      </div>
+
+      {/* Code Editor Section */}
+      <div style={{ width: '50%', padding: '20px' }}>
+        <CodeEditor
+          code={code}
+          onChange={handleCodeChange}
+          language={language}
+          setLanguage={setLanguage}
+        />
       </div>
     </div>
   );
