@@ -325,7 +325,7 @@ const Login = () => {
 
                                     <button className="w-full bg-blue-400 text-white py-2 rounded-lg text-lg flex justify-center items-center hover:bg-blue-500 focus:outline-none">
                                         <i className="fab fa-twitter mr-2"></i>
-                                        Continue with Twitter
+                                        Continue with Github
                                     </button>
                                 </div>
                             )}
