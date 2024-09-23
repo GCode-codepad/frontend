@@ -91,10 +91,10 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="flex flex-row items-center justify-center space-x-8 mt-12">
+          <div className="flex flex-row items-center justify-center space-x-8 mt-32">
             <button
                 onClick={createNewRoom}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-20 h-20 rounded-3xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-20 h-20 rounded-3xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
             >
               <VideoCameraFilled className="text-5xl" />
             </button>
