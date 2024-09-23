@@ -16,12 +16,12 @@ const Home = () => {
   const [userPhotoURL, setUserPhotoURL] = useState("");
 
   useEffect(() => {
-    if (!user && !Token) {
-      navigate("/login");
-    } else {
-      setUserId(user.uid);
-      setUserPhotoURL(user.photoURL);
-    }
+    // if (!user && !Token) {
+    //   navigate("/login");
+    // } else {
+    //   setUserId(user.uid);
+    //   setUserPhotoURL(user.photoURL);
+    // }
   }, [user, Token, navigate]);
 
   // Handle user logout
