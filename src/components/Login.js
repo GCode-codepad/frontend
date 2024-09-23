@@ -131,6 +131,7 @@ const Login = () => {
                 id: user.uid,
                 email: user.email,
                 displayName: userName,
+                photoURL: 'https://firebasestorage.googleapis.com/v0/b/gcode-45b7f.appspot.com/o/user-circle.1024x1024.png?alt=media&token=080ae93b-626b-4289-a0dd-d4a5b3f2190d',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             });
@@ -153,6 +154,7 @@ const Login = () => {
                     id: user.uid,
                     email: user.email,
                     displayName: user.displayName,
+                    photoURL: 'https://firebasestorage.googleapis.com/v0/b/gcode-45b7f.appspot.com/o/user-circle.1024x1024.png?alt=media&token=080ae93b-626b-4289-a0dd-d4a5b3f2190d',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 });

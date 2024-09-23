@@ -5,6 +5,7 @@ import {Avatar, Button} from "antd";
 import { VideoCameraFilled, PlusOutlined, LogoutOutlined } from '@ant-design/icons';
 import {AuthContext} from "./AuthContext";
 import { getAuth, signOut } from "firebase/auth";
+import axios from "axios";
 
 const Home = () => {
   const { user, Token } = useContext(AuthContext);
@@ -16,13 +17,22 @@ const Home = () => {
   const [userPhotoURL, setUserPhotoURL] = useState("");
 
   useEffect(() => {
-    // if (!user && !Token) {
-    //   navigate("/login");
-    // } else {
-    //   setUserId(user.uid);
-    //   setUserPhotoURL(user.photoURL);
-    // }
+    if (!user && !Token) {
+      navigate("/login");
+    } else {
+      setUserId(user.uid);
+      // setUserPhotoURL(user.photoURL);
+      // console.log(user.photoURL);
+      // console.log(userPhotoURL);
+
+    }
   }, [user, Token, navigate]);
+
+  useEffect(() => {
+    if (userId && Token) {
+      getUserPhotoURL(userId);
+    }
+  }, [userId]);
 
   // Handle user logout
   const handleLogout = () => {
@@ -70,16 +80,33 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
+  const getUserPhotoURL = async (userId) => {
+    try {
+      const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/user/users/${userId}`,
+          {
+
+          },
+      );
+      const User = response.data;
+      setUserPhotoURL(User.photoURL);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      throw error;
+    }
+  };
+
   return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white shadow-lg rounded-lg w-[800px] h-[500px] p-8 relative">
 
           {/* Container for title, avatar, and logout */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-4xl font-bold">GCCode</h1>
+            {/*<h1 className="text-4xl font-bold">GCCode</h1>*/}
+            <img src={`${process.env.PUBLIC_URL}/GCLogo.png`} alt={"tt"} style={{ maxWidth: '50px', maxHeight: '50px' }}/>
             <div className="flex items-center space-x-4">
               <Avatar size={40} src={userPhotoURL}></Avatar>
-              {/* Logout Button */}
+
               <Button
                   type="primary"
                   icon={<LogoutOutlined />}
@@ -99,7 +126,6 @@ const Home = () => {
               <VideoCameraFilled className="text-5xl" />
             </button>
 
-            {/* Join Room Button */}
             <button
                 onClick={handleJoinClick}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-20 h-20 rounded-3xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
