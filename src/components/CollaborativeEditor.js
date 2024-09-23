@@ -68,7 +68,6 @@ const CollaborativeEditor = () => {
 
     // Listen for userJoined event to get list of users
     socketRef.current.on('userJoined', (userId) => {
-      console.log('User joined:', userId);
       setUsersInRoom((prevUsers) => [...prevUsers, userId]);
     });
 
@@ -81,14 +80,17 @@ const CollaborativeEditor = () => {
 
     // Listen for code changes from server
     socketRef.current.on('codeChange', ({ code: newCode }) => {
-      console.log('Received code change from server');
       setCode(newCode);
     });
 
     // Listen for initial code from server
     socketRef.current.on('codeChange', ({ code: initialCode }) => {
-      console.log('Received initial code from server');
       setCode(initialCode);
+    });
+
+    // Listen for language changes from server
+    socketRef.current.on('languageChange', ({ language: newLanguage }) => {
+      setLanguage(newLanguage);
     });
 
     // Cleanup on unmount
@@ -195,6 +197,12 @@ const CollaborativeEditor = () => {
     socketRef.current.emit('codeChange', { roomId, code: newCode });
   };
 
+  // Handle language changes
+  const handleLanguageChange = (newLanguage) => {
+    setLanguage(newLanguage);
+    socketRef.current.emit('languageChange', { roomId, language: newLanguage });
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       {/* Video Call and Controls */}
@@ -258,7 +266,7 @@ const CollaborativeEditor = () => {
           code={code}
           onChange={handleCodeChange}
           language={language}
-          setLanguage={setLanguage}
+          setLanguage={handleLanguageChange}
         />
       </div>
     </div>

@@ -77,12 +77,13 @@ const CodeEditor = ({ code, onChange, language, setLanguage }) => {
   // Register snippets whenever the language changes
   useEffect(() => {
     registerSnippets(language);
+    console.log(language)
   }, [language, monacoInstance]);
 
   return (
     <div>
-      <div style={{ marginBottom: '10px' }}>
-        <label htmlFor="language-select" style={{ marginRight: '10px' }}>
+      <div style={{marginBottom: '10px'}}>
+        <label htmlFor="language-select" style={{marginRight: '10px'}}>
           Select Language:
         </label>
         <select
@@ -92,7 +93,7 @@ const CodeEditor = ({ code, onChange, language, setLanguage }) => {
         >
           <option value="python">Python</option>
           <option value="java">Java</option>
-          {/* Add more languages as needed */}
+          <option value="cpp">C++</option>
         </select>
       </div>
       <Editor
