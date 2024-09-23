@@ -231,11 +231,29 @@ const CollaborativeEditor = () => {
         {/* Incoming Call Notification */}
         <div>
           {receivingCall && !callAccepted && (
-            <div>
-              <h1>{name} is calling...</h1>
-              <button onClick={answerCall}>Answer</button>
-            </div>
-          )}
+              <div className="modal">
+                <div className="modal-content">
+                  <h2 className="text-2xl mb-4">{name}is calling...</h2>
+
+                  <div className="">
+                    <button
+                        onClick={answerCall}
+                        className=" bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                    >
+                      Answer
+                    </button>
+                  </div>
+                </div>
+              </div>
+          )
+          //     (
+          //   <div>
+          //     <h1>{name} is calling...</h1>
+          //     <button onClick={answerCall}>Answer</button>
+          //   </div>
+          // )
+
+          }
         </div>
 
         {/* Participants and Call Controls */}
@@ -247,13 +265,20 @@ const CollaborativeEditor = () => {
               <button
                 onClick={() => callUser(userId)}
                 style={{ marginLeft: '10px' }}
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-2 rounded-3xl"
+
               >
                 Call
               </button>
             </div>
           ))}
           {callAccepted && !callEnded && (
-            <button onClick={leaveCall} style={{ marginTop: '10px' }}>
+            <button
+                onClick={leaveCall}
+                style={{ marginTop: '10px' }}
+                className="bg-red-500 hover:bg-red-600 text-white font-semibold px-2 rounded-3xl"
+
+            >
               End Call
             </button>
           )}
