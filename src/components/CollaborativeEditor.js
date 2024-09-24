@@ -18,7 +18,7 @@ const CollaborativeEditor = () => {
   const [callEnded, setCallEnded] = useState(false);
   const [name, setName] = useState('Your Name');
   const [usersInRoom, setUsersInRoom] = useState([]);
-
+  const [output, setOutput] = useState('');
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
@@ -91,6 +91,11 @@ const CollaborativeEditor = () => {
     // Listen for language changes from server
     socketRef.current.on('languageChange', ({ language: newLanguage }) => {
       setLanguage(newLanguage);
+    });
+
+    // Listen for code output from server
+    socketRef.current.on('codeOutput', ({ output }) => {
+      setOutput(output);
     });
 
     // Cleanup on unmount
@@ -203,6 +208,26 @@ const CollaborativeEditor = () => {
     socketRef.current.emit('languageChange', { roomId, language: newLanguage });
   };
 
+  // Handle running code
+  const handleRunCode = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/code/code/execute', { // Update with your backend URL
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ language, code }),
+      });
+      const data = await response.json();
+      const output = data.output;
+      setOutput(output);
+      // Emit the output to other users in the room
+      socketRef.current.emit('codeOutput', { roomId, output });
+    } catch (error) {
+      console.error('Error executing code:', error);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       {/* Video Call and Controls */}
@@ -293,6 +318,16 @@ const CollaborativeEditor = () => {
           language={language}
           setLanguage={handleLanguageChange}
         />
+        {/* Run Button */}
+        <button onClick={handleRunCode} style={{ marginTop: '10px' }}>
+          Run
+        </button>
+        {/* Output Display */}
+        <div style={{ marginTop: '20px' }}>
+          <h3>Output:</h3>
+          <pre>{output}</pre>
+        </div>
+
       </div>
     </div>
   );
