@@ -184,13 +184,11 @@ const Login = () => {
                 </div>
 
                 <div className="md:w-1/2 p-8">
-                    {/* 添加过渡动画效果 */}
                     <div
                         className={`transform transition-transform duration-500 ${
                             isSignUp ? 'translate-x-0 opacity-100' : 'opacity-100'
                         }`}
                     >
-                        {/* 根据 isSignUp 的值渲染不同的表单 */}
                         <div className={`transition-opacity duration-500 ${isSignUp ? 'opacity-100' : 'opacity-0 h-0'}`}>
                             {isSignUp && (
                                 <div>

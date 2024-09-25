@@ -8,7 +8,7 @@ import { getAuth, signOut } from "firebase/auth";
 import axios from "axios";
 
 const Home = () => {
-  const { user, Token } = useContext(AuthContext);
+  const { user, Token, loading } = useContext(AuthContext);
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,16 +17,16 @@ const Home = () => {
   const [userPhotoURL, setUserPhotoURL] = useState("");
 
   useEffect(() => {
-    if (!user && !Token) {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
       navigate("/login");
     } else {
       setUserId(user.uid);
-      // setUserPhotoURL(user.photoURL);
-      // console.log(user.photoURL);
-      // console.log(userPhotoURL);
-
     }
-  }, [user, Token, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (userId && Token) {
@@ -39,8 +39,8 @@ const Home = () => {
     const auth = getAuth();
     signOut(auth)
         .then(() => {
-          // Sign-out successful.
-          navigate("/login"); // Redirect to login page
+          localStorage.removeItem('loginTimestamp');
+          navigate("/login");
         })
         .catch((error) => {
           console.error("Error logging out: ", error);
