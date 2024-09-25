@@ -28,7 +28,7 @@ const CollaborativeEditor = () => {
 
   useEffect(() => {
     // Initialize socket connection
-    socketRef.current = io.connect('http://localhost:8002'); // Adjust based on your server URL
+    socketRef.current = io.connect(`${process.env.REACT_APP_VIDEO_URL}`);
 
     // Socket connection status
     socketRef.current.on('connect', () => {
