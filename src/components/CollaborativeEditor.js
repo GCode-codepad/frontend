@@ -98,6 +98,13 @@ const CollaborativeEditor = () => {
       setOutput(output);
     });
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        alert('Unusual Actions Detected');
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Cleanup on unmount
     return () => {
       if (connectionRef.current) {
@@ -185,14 +192,18 @@ const CollaborativeEditor = () => {
 
   const leaveCall = () => {
     console.log('Leaving call');
+    // if (connectionRef.current) {
+    //   connectionRef.current.destroy();
+    //   console.log('Destroyed peer connection');
+    // }
+    // if (socketRef.current) {
+    //   socketRef.current.disconnect();
+    //   console.log('Disconnected socket');
+    // }
     setCallEnded(true);
     if (connectionRef.current) {
       connectionRef.current.destroy();
       console.log('Destroyed peer connection');
-    }
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      console.log('Disconnected socket');
     }
   };
 
