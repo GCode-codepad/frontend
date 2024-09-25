@@ -16,6 +16,7 @@ const CollaborativeEditor = () => {
   const [callerSignal, setCallerSignal] = useState(null);
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
+  const [callDisconnected, setCallDisconnected] = useState(false); // New state variable
   const [name, setName] = useState('Your Name');
   const [usersInRoom, setUsersInRoom] = useState([]);
   const [output, setOutput] = useState('');
@@ -38,6 +39,8 @@ const CollaborativeEditor = () => {
 
     socketRef.current.on('disconnect', () => {
       console.log('Socket disconnected');
+      // Refresh the page immediately
+      window.location.reload();
     });
 
     // Join the room
@@ -83,11 +86,6 @@ const CollaborativeEditor = () => {
       setCode(newCode);
     });
 
-    // Listen for initial code from server
-    socketRef.current.on('codeChange', ({ code: initialCode }) => {
-      setCode(initialCode);
-    });
-
     // Listen for language changes from server
     socketRef.current.on('languageChange', ({ language: newLanguage }) => {
       setLanguage(newLanguage);
@@ -96,6 +94,16 @@ const CollaborativeEditor = () => {
     // Listen for code output from server
     socketRef.current.on('codeOutput', ({ output }) => {
       setOutput(output);
+    });
+
+    // Listen for 'callEnded' event from the server
+    socketRef.current.on('callEnded', () => {
+      console.log('Call ended by the other user');
+      setCallEnded(true);
+      setCallDisconnected(true);
+      if (connectionRef.current) {
+        connectionRef.current.destroy();
+      }
     });
 
     // Cleanup on unmount
@@ -140,6 +148,14 @@ const CollaborativeEditor = () => {
 
     peer.on('error', (err) => {
       console.error('Peer error:', err);
+      // Refresh the page if there's a peer connection error
+      window.location.reload();
+    });
+
+    peer.on('close', () => {
+      console.log('Peer connection closed');
+      // Refresh the page if the peer connection closes
+      window.location.reload();
     });
 
     socketRef.current.on('callAccepted', (signal) => {
@@ -177,6 +193,14 @@ const CollaborativeEditor = () => {
 
     peer.on('error', (err) => {
       console.error('Peer error:', err);
+      // Refresh the page if there's a peer connection error
+      window.location.reload();
+    });
+
+    peer.on('close', () => {
+      console.log('Peer connection closed');
+      // Refresh the page if the peer connection closes
+      window.location.reload();
     });
 
     peer.signal(callerSignal);
@@ -190,10 +214,7 @@ const CollaborativeEditor = () => {
       connectionRef.current.destroy();
       console.log('Destroyed peer connection');
     }
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      console.log('Disconnected socket');
-    }
+    // Do not disconnect the socket here
   };
 
   // Handle code changes
@@ -211,6 +232,7 @@ const CollaborativeEditor = () => {
   // Handle running code
   const handleRunCode = async () => {
     try {
+<<<<<<< Updated upstream
       const response = await fetch('http://localhost:8080/code/code/execute', { // Update with your backend URL
         method: 'POST',
         headers: {
@@ -218,6 +240,18 @@ const CollaborativeEditor = () => {
         },
         body: JSON.stringify({ language, code }),
       });
+=======
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/code/code/execute`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ language, code }),
+        }
+      );
+>>>>>>> Stashed changes
       const data = await response.json();
       const output = data.output;
       setOutput(output);
@@ -229,7 +263,11 @@ const CollaborativeEditor = () => {
   };
 
   return (
+<<<<<<< Updated upstream
     <div style={{ display: 'flex', flexDirection: 'row' }}>
+=======
+    <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+>>>>>>> Stashed changes
       {/* Video Call and Controls */}
       <div style={{ width: '50%', padding: '20px' }}>
         {/* Video Streams */}
@@ -241,6 +279,10 @@ const CollaborativeEditor = () => {
               ref={myVideo}
               autoPlay
               style={{ width: '300px', marginRight: '10px' }}
+<<<<<<< Updated upstream
+=======
+              className={'rounded-2xl'}
+>>>>>>> Stashed changes
             />
           )}
           {callAccepted && !callEnded && (
@@ -249,22 +291,53 @@ const CollaborativeEditor = () => {
               ref={userVideo}
               autoPlay
               style={{ width: '300px' }}
+<<<<<<< Updated upstream
+=======
+              className={'rounded-2xl'}
+>>>>>>> Stashed changes
             />
           )}
         </div>
 
+<<<<<<< Updated upstream
         {/* Incoming Call Notification */}
         <div>
           {receivingCall && !callAccepted && (
             <div>
               <h1>{name} is calling...</h1>
               <button onClick={answerCall}>Answer</button>
+=======
+        {/* Notification when the other user disconnects */}
+        {callDisconnected && (
+          <div className="notification">
+            The other user has disconnected.
+          </div>
+        )}
+
+        {/* Incoming Call Notification */}
+        <div>
+          {receivingCall && !callAccepted && (
+            <div className="modal">
+              <div className="modal-content">
+                <h2 className="text-2xl mb-4">You have a video call...</h2>
+
+                <div className="">
+                  <button
+                    onClick={answerCall}
+                    className=" bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                  >
+                    Answer
+                  </button>
+                </div>
+              </div>
+>>>>>>> Stashed changes
             </div>
           )}
         </div>
 
         {/* Participants and Call Controls */}
         <div>
+<<<<<<< Updated upstream
           <h2>Participants</h2>
           {usersInRoom.map((userId) => (
             <div key={userId} style={{ marginBottom: '5px' }}>
@@ -304,6 +377,56 @@ const CollaborativeEditor = () => {
         </div>
 
       </div>
+=======
+          {usersInRoom.map((userId) => (
+            <div
+              key={userId}
+              style={{ marginBottom: '5px', marginTop: '5px' }}
+            >
+              <span>Participant</span>
+              <button
+                onClick={() => callUser(userId)}
+                style={{ marginLeft: '10px' }}
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-2 rounded-3xl"
+              >
+                Call
+              </button>
+              {callAccepted && !callEnded && (
+                <button
+                  onClick={leaveCall}
+                  style={{ marginTop: '10px', marginLeft: '20px' }}
+                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-2 rounded-3xl"
+                >
+                  End Call
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Code Editor Section */}
+      <div style={{ width: '50%', height: '70vh' }}>
+        <CodeEditor
+          code={code}
+          onChange={handleCodeChange}
+          language={language}
+          setLanguage={handleLanguageChange}
+        />
+        {/* Run Button */}
+        <div className="run-output-container">
+          <button onClick={handleRunCode} className="run-button">
+            Run
+          </button>
+
+          {/* Output Display */}
+          <div className="output-container">
+            <h3>Output:</h3>
+            <pre className="output-pre">{output}</pre>
+          </div>
+        </div>
+      </div>
+>>>>>>> Stashed changes
     </div>
   );
 };
