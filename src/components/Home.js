@@ -1,28 +1,69 @@
-import React, { useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Modal.css'; // Import the CSS file
-import { VideoCameraFilled, PlusOutlined } from '@ant-design/icons';
+import './Modal.css';
+import {Avatar, Button} from "antd";
+import { VideoCameraFilled, PlusOutlined, LogoutOutlined } from '@ant-design/icons';
+import {AuthContext} from "./AuthContext";
+import { getAuth, signOut } from "firebase/auth";
+import axios from "axios";
 
 const Home = () => {
+  const { user, Token, loading } = useContext(AuthContext);
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [userId, setUserId] = useState("");
+  const [userPhotoURL, setUserPhotoURL] = useState("");
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigate("/login");
+    } else {
+      setUserId(user.uid);
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (userId && Token) {
+      getUserPhotoURL(userId);
+    }
+  }, [userId]);
+
+  // Handle user logout
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth)
+        .then(() => {
+          localStorage.removeItem('loginTimestamp');
+          navigate("/login");
+        })
+        .catch((error) => {
+          console.error("Error logging out: ", error);
+        });
+  };
 
   // Create a new Room and copy the Room ID to the clipboard
   const createNewRoom = () => {
-    const newRoomId = Math.random().toString(36).substr(2, 9);
-    setRoomId(newRoomId);  // Save the roomId in state (optional)
+    // if (!user && !Token) {
+    //   navigate("/login");
+    // } else {
+      const newRoomId = Math.random().toString(36).substr(2, 9);
+      setRoomId(newRoomId);  // Save the roomId in state
 
-    // Copy Room ID to clipboard
-    navigator.clipboard.writeText(newRoomId).then(() => {
-      alert(`Room ID ${newRoomId} has been copied to your clipboard.`);
-    }).catch(err => {
-      console.error('Failed to copy room ID to clipboard:', err);
-    });
+      // Copy Room ID to clipboard
+      navigator.clipboard.writeText(newRoomId).then(() => {
+        alert(`Room ID ${newRoomId} has been copied to your clipboard.`);
+      }).catch(err => {
+        console.error('Failed to copy room ID to clipboard:', err);
+      });
 
-    // Navigate to the room
-    navigate(`/room/${newRoomId}`);
+      navigate(`/room/${newRoomId}`);
+    // }
   };
 
   const joinRoom = () => {
@@ -39,23 +80,55 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
+  const getUserPhotoURL = async (userId) => {
+    try {
+      const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/user/users/${userId}`,
+          {
+
+          },
+      );
+      const User = response.data;
+      setUserPhotoURL(User.photoURL);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      throw error;
+    }
+  };
+
   return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white shadow-lg rounded-lg p-28 w-full max-w-3xl">
-          <h1 className="text-4xl font-bold mb-10 text-center">Code Interview Platform</h1>
+        <div className="bg-white shadow-lg rounded-lg w-[800px] h-[500px] p-8 relative">
 
-          <div className="flex flex-row items-center justify-center space-x-8">
+          {/* Container for title, avatar, and logout */}
+          <div className="flex justify-between items-center mb-6">
+            {/*<h1 className="text-4xl font-bold">GCCode</h1>*/}
+            <img src={`${process.env.PUBLIC_URL}/GCLogo.png`} alt={"tt"} style={{ maxWidth: '50px', maxHeight: '50px' }}/>
+            <div className="flex items-center space-x-4">
+              <Avatar size={40} src={userPhotoURL}></Avatar>
+
+              <Button
+                  type="primary"
+                  icon={<LogoutOutlined />}
+                  onClick={handleLogout}
+                  danger
+              >
+                Logout
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-row items-center justify-center space-x-8 mt-32">
             <button
                 onClick={createNewRoom}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-20 h-20 rounded-2xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-20 h-20 rounded-3xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
             >
               <VideoCameraFilled className="text-5xl" />
             </button>
 
-            {/* Join Room Button */}
             <button
                 onClick={handleJoinClick}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-20 h-20 rounded-2xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-20 h-20 rounded-3xl flex items-center justify-center transform hover:translate-y-[-5px] hover:shadow-lg transition-all duration-300"
             >
               <PlusOutlined className="text-5xl" />
             </button>

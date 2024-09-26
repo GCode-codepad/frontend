@@ -5,7 +5,7 @@ import Peer from "simple-peer";
 import io from "socket.io-client";
 
 // Connect to the WebSocket server
-const socket = io.connect('http://localhost:8002')
+const socket = io.connect(`${process.env.REACT_APP_VIDEO_URL}`)
 
 export const VideoChat = () => {
   const [me, setMe] = useState("");

@@ -131,6 +131,7 @@ const Login = () => {
                 id: user.uid,
                 email: user.email,
                 displayName: userName,
+                photoURL: 'https://firebasestorage.googleapis.com/v0/b/gcode-45b7f.appspot.com/o/user-circle.1024x1024.png?alt=media&token=080ae93b-626b-4289-a0dd-d4a5b3f2190d',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             });
@@ -153,6 +154,7 @@ const Login = () => {
                     id: user.uid,
                     email: user.email,
                     displayName: user.displayName,
+                    photoURL: user.photoURL,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 });
@@ -182,13 +184,11 @@ const Login = () => {
                 </div>
 
                 <div className="md:w-1/2 p-8">
-                    {/* 添加过渡动画效果 */}
                     <div
                         className={`transform transition-transform duration-500 ${
                             isSignUp ? 'translate-x-0 opacity-100' : 'opacity-100'
                         }`}
                     >
-                        {/* 根据 isSignUp 的值渲染不同的表单 */}
                         <div className={`transition-opacity duration-500 ${isSignUp ? 'opacity-100' : 'opacity-0 h-0'}`}>
                             {isSignUp && (
                                 <div>
@@ -325,7 +325,7 @@ const Login = () => {
 
                                     <button className="w-full bg-blue-400 text-white py-2 rounded-lg text-lg flex justify-center items-center hover:bg-blue-500 focus:outline-none">
                                         <i className="fab fa-twitter mr-2"></i>
-                                        Continue with Twitter
+                                        Continue with Github
                                     </button>
                                 </div>
                             )}
