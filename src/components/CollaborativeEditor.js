@@ -192,14 +192,6 @@ const CollaborativeEditor = () => {
 
   const leaveCall = () => {
     console.log('Leaving call');
-    // if (connectionRef.current) {
-    //   connectionRef.current.destroy();
-    //   console.log('Destroyed peer connection');
-    // }
-    // if (socketRef.current) {
-    //   socketRef.current.disconnect();
-    //   console.log('Disconnected socket');
-    // }
     setCallEnded(true);
     if (connectionRef.current) {
       connectionRef.current.destroy();
