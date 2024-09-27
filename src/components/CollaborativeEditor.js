@@ -19,8 +19,8 @@ const CollaborativeEditor = () => {
   const [name, setName] = useState('Your Name');
   const [usersInRoom, setUsersInRoom] = useState([]);
   const [output, setOutput] = useState('');
-  const myVideo = useRef();
-  const userVideo = useRef();
+  const myVideo = useRef(null);
+  const userVideo = useRef(null);
   const connectionRef = useRef();
   const socketRef = useRef();
   const typingRef = useRef(false); // To manage typing status
@@ -45,17 +45,15 @@ const CollaborativeEditor = () => {
 
     // Get user media
     navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          setStream(stream);
-          if (myVideo.current) {
-            myVideo.current.srcObject = stream;
-          }
-          console.log('Obtained user media stream');
-        })
-        .catch((err) => {
-          console.error('Failed to get media stream:', err);
-        });
+      .getUserMedia({ video: true, audio: true })
+      .then((mediaStream) => {
+        console.log('Obtained user media stream:', mediaStream);
+        setStream(mediaStream);
+      })
+      .catch((err) => {
+        console.error('Failed to get media stream:', err);
+        alert('Unable to access camera and microphone. Please ensure the app is served over HTTPS.');
+      });
 
     // Handle incoming calls
     socketRef.current.on('callUser', (data) => {
@@ -79,13 +77,8 @@ const CollaborativeEditor = () => {
     });
 
     // Listen for code changes from server
-    socketRef.current.on('codeChange', ({ code: newCode }) => {
-      setCode(newCode);
-    });
-
-    // Listen for initial code from server
-    socketRef.current.on('codeChange', ({ code: initialCode }) => {
-      setCode(initialCode);
+    socketRef.current.on('codeChange', ({ code }) => {
+      setCode(code);
     });
 
     // Listen for language changes from server
@@ -113,9 +106,18 @@ const CollaborativeEditor = () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
       console.log('Cleaned up socket connections and peer connections');
     };
   }, [roomId]);
+
+  // Separate useEffect to set myVideo srcObject
+  useEffect(() => {
+    if (myVideo.current && stream) {
+      myVideo.current.srcObject = stream;
+      console.log('myVideo srcObject set in separate useEffect');
+    }
+  }, [stream, myVideo]);
 
   const callUser = (id) => {
     console.log('Calling user:', id);
@@ -138,9 +140,9 @@ const CollaborativeEditor = () => {
       console.log(`Emitting callUser to ${id}`);
     });
 
-    peer.on('stream', (stream) => {
+    peer.on('stream', (mediaStream) => {
       if (userVideo.current) {
-        userVideo.current.srcObject = stream;
+        userVideo.current.srcObject = mediaStream;
       }
       console.log('Received stream from peer');
     });
@@ -175,9 +177,9 @@ const CollaborativeEditor = () => {
       console.log(`Emitting answerCall to ${caller}`);
     });
 
-    peer.on('stream', (stream) => {
+    peer.on('stream', (mediaStream) => {
       if (userVideo.current) {
-        userVideo.current.srcObject = stream;
+        userVideo.current.srcObject = mediaStream;
       }
       console.log('Received stream from peer');
     });
@@ -197,6 +199,11 @@ const CollaborativeEditor = () => {
       connectionRef.current.destroy();
       console.log('Destroyed peer connection');
     }
+    // Optionally, reset state variables
+    setReceivingCall(false);
+    setCallAccepted(false);
+    setCaller('');
+    setCallerSignal(null);
   };
 
   // Handle code changes
@@ -232,107 +239,98 @@ const CollaborativeEditor = () => {
   };
 
   return (
-      <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
-        {/* Video Call and Controls */}
-        <div style={{ width: '50%', padding: '20px' }}>
-          {/* Video Streams */}
-          <div>
-            {stream && (
-                <video
-                    playsInline
-                    muted
-                    ref={myVideo}
-                    autoPlay
-                    style={{ width: '300px', marginRight: '10px' }}
-                    className={"rounded-2xl"}
-                />
-            )}
-            {callAccepted && !callEnded && (
-                <video
-                    playsInline
-                    ref={userVideo}
-                    autoPlay
-                    style={{ width: '300px' }}
-                    className={"rounded-2xl"}
-                />
-            )}
-          </div>
-
-          {/* Incoming Call Notification */}
-          <div>
-            {receivingCall && !callAccepted && (
-                <div className="modal">
-                  <div className="modal-content">
-                    <h2 className="text-2xl mb-4">You have a video call...</h2>
-
-                    <div className="">
-                      <button
-                          onClick={answerCall}
-                          className=" bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
-                      >
-                        Answer
-                      </button>
-                    </div>
-                  </div>
-                </div>
-            )}
-          </div>
-
-          {/* Participants and Call Controls */}
-          <div>
-            {/*<h2>Participants:</h2>*/}
-            {usersInRoom.map((userId) => (
-                <div key={userId} style={{ marginBottom: '5px', marginTop: '5px'}}>
-                  <span>participant</span>
-                  <button
-                      onClick={() => callUser(userId)}
-                      style={{ marginLeft: '10px' }}
-                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-2 rounded-3xl"
-                  >
-                    Call
-                  </button>
-                  {callAccepted && !callEnded && (
-                      <button
-                          onClick={leaveCall}
-                          style={{ marginTop: '10px', marginLeft: '20px'}}
-                          className="bg-red-500 hover:bg-red-600 text-white font-semibold px-2 rounded-3xl"
-                      >
-                        End Call
-                      </button>
-                  )}
-                </div>
-            ))}
-
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+      {/* Video Call and Controls */}
+      <div style={{ width: '50%', padding: '20px' }}>
+        {/* Video Streams */}
+        <div>
+          <video
+            playsInline
+            muted
+            ref={myVideo}
+            autoPlay
+            style={{ width: '300px', marginRight: '10px', border: '2px solid blue' }} // Added border for visibility
+            className="rounded-2xl"
+          />
+          {callAccepted && !callEnded && (
+            <video
+              playsInline
+              ref={userVideo}
+              autoPlay
+              style={{ width: '300px', border: '2px solid green' }} // Added border for visibility
+              className="rounded-2xl"
+            />
+          )}
         </div>
 
-        {/* Code Editor Section */}
-        <div style={{width: '50%', height: '70vh'}}>
-          <CodeEditor
-              code={code}
-              onChange={handleCodeChange}
-              language={language}
-              setLanguage={handleLanguageChange}
-          />
-          {/* Run Button */}
-          <div className="run-output-container">
-            <button
-                onClick={handleRunCode}
-                className="run-button"
-            >
-              Run
-            </button>
+        {/* Incoming Call Notification */}
+        <div>
+          {receivingCall && !callAccepted && (
+            <div className="modal">
+              <div className="modal-content">
+                <h2 className="text-2xl mb-4">You have a video call...</h2>
 
-            {/* Output Display */}
-            <div className="output-container">
-              <h3>Output:</h3>
-              <pre className="output-pre">
-                {output}
-              </pre>
+                <div className="">
+                  <button
+                    onClick={answerCall}
+                    className=" bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                  >
+                    Answer
+                  </button>
+                </div>
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Participants and Call Controls */}
+        <div>
+          {usersInRoom.map((userId) => (
+            <div key={userId} style={{ marginBottom: '5px', marginTop: '5px' }}>
+              <span>Participant: {userId}</span>
+              <button
+                onClick={() => callUser(userId)}
+                style={{ marginLeft: '10px' }}
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-2 rounded-3xl"
+              >
+                Call
+              </button>
+              {callAccepted && !callEnded && (
+                <button
+                  onClick={leaveCall}
+                  style={{ marginTop: '10px', marginLeft: '20px' }}
+                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-2 rounded-3xl"
+                >
+                  End Call
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Code Editor Section */}
+      <div style={{ width: '50%', height: '70vh' }}>
+        <CodeEditor
+          code={code}
+          onChange={handleCodeChange}
+          language={language}
+          setLanguage={handleLanguageChange}
+        />
+        {/* Run Button */}
+        <div className="run-output-container">
+          <button onClick={handleRunCode} className="run-button">
+            Run
+          </button>
+
+          {/* Output Display */}
+          <div className="output-container">
+            <h3>Output:</h3>
+            <pre className="output-pre">{output}</pre>
           </div>
         </div>
       </div>
+    </div>
   );
 };
 
